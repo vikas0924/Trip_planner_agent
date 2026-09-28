@@ -1,0 +1,32 @@
+# Start from a lightweight image that already includes Python 3.11.
+FROM python:3.11-slim
+
+# Use /app as the working directory inside the container.
+WORKDIR /app
+
+# Avoid writing .pyc files and send logs directly to the container output.
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install system tools needed to build Python dependencies and fetch resources.
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the dependency list into the image so it can be installed.
+COPY requirements.txt .
+
+# Upgrade pip, then install the project's Python dependencies.
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the application source files into the image.
+COPY . .
+
+# Document the port used by the FastAPI application.
+EXPOSE 8000
+
+# Start the FastAPI app with Uvicorn, listening on all container interfaces.
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
